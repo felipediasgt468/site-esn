@@ -181,14 +181,12 @@ h1,h2,h3,h4{font-family:var(--display);color:var(--white);margin:0;font-weight:6
     position:absolute;inset:0;transform:none;
     width:100%;height:100%;object-fit:cover;object-position:66% 24%;
     opacity:1;
-    mask-image:linear-gradient(to bottom,transparent 0,#000 26%,#000 100%);
-    -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 26%,#000 100%);
+    /* no celular a foto vai limpa: sem mascara, sem degrade, sem tinta */
+    mask-image:none;
+    -webkit-mask-image:none;
+    filter:none;
   }
-  .hero__bg::after{
-    background:
-      linear-gradient(to bottom,var(--void) 0,rgba(0,0,0,.5) 24%,transparent 54%),
-      radial-gradient(78% 46% at 56% 34%,rgba(230,140,58,.13),transparent 70%);
-  }
+  .hero__bg::after{display:none}
 }
 .hero__bg::after{
   content:"";position:absolute;inset:0;
