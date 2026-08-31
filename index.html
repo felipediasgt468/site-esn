@@ -2649,36 +2649,43 @@ window.muralCarrossel = (function(){
     if(origem && origem.isConnected) origem.focus();
   }
 
-  mural.addEventListener('click', function(e){
-    var botao = e.target.closest('.dep');
-    if(!botao) return;
-    itens = muralItens;
-    // clone abre o mesmo depoimento do original
+  /* Os dois carrosseis capturam o ponteiro no arrasto (setPointerCapture) e,
+     com isso, o "click" chega retargetado pra pista, nunca pro card.
+     Solucao: guardar o alvo real no pointerdown e abrir no pointerup,
+     se nao houve arrasto. Vale pra mouse, dedo e caneta. */
+  function indiceDe(botao, lista){
     var n = parseInt(botao.getAttribute('data-i'), 10);
-    if(isNaN(n)) n = itens.indexOf(botao.querySelector('img'));
-    if(n < 0) return;
-    abrir(n, botao);
-  });
-
-  if(pline){
-    /* a esteira captura o ponteiro no arrasto e o click chega retargetado;
-       por isso o alvo e guardado no pointerdown e aberto no pointerup */
-    var pdx = 0, pdy = 0, pAlvo = null;
-    pline.addEventListener('pointerdown', function(e){
-      pdx = e.clientX; pdy = e.clientY;
-      pAlvo = e.target && e.target.closest ? e.target.closest('.print') : null;
+    if(isNaN(n)) n = lista.indexOf(botao.querySelector('img'));
+    return (n >= 0 && n < lista.length) ? n : -1;
+  }
+  function ligarAbertura(area, seletor, lista){
+    var x0 = 0, y0 = 0, alvo = null;
+    area.addEventListener('pointerdown', function(e){
+      x0 = e.clientX; y0 = e.clientY;
+      alvo = (e.target && e.target.closest) ? e.target.closest(seletor) : null;
     });
-    pline.addEventListener('pointerup', function(e){
-      var botao = pAlvo; pAlvo = null;
+    area.addEventListener('pointerup', function(e){
+      var botao = alvo; alvo = null;
+      if(!botao || !lbx.hidden) return;
+      if(Math.abs(e.clientX - x0) + Math.abs(e.clientY - y0) > 8) return;   // arrastou
+      var n = indiceDe(botao, lista);
+      if(n < 0) return;
+      itens = lista;
+      abrir(n, botao);
+    });
+    // teclado (Enter/Espaco no botao focado) chega como click sem ponteiro
+    area.addEventListener('click', function(e){
+      if(!lbx.hidden) return;
+      var botao = (e.target && e.target.closest) ? e.target.closest(seletor) : null;
       if(!botao) return;
-      // arrastou a esteira = nao era clique para abrir
-      if(Math.abs(e.clientX - pdx) + Math.abs(e.clientY - pdy) > 8) return;
-      var n = parseInt(botao.getAttribute('data-i'), 10);
-      if(isNaN(n) || n < 0 || n >= printItens.length) return;
-      itens = printItens;
+      var n = indiceDe(botao, lista);
+      if(n < 0) return;
+      itens = lista;
       abrir(n, botao);
     });
   }
+  ligarAbertura(mural, '.dep', muralItens);
+  if(pline) ligarAbertura(pline, '.print', printItens);
 
   document.getElementById('lbxX').addEventListener('click', fechar);
   document.getElementById('lbxAnt').addEventListener('click', function(){ mostrar(i - 1); });
