@@ -1,0 +1,39 @@
+# segredos
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*secret*
+*token*
+*credencia*
+
+# lixo de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# dependencias / build
+node_modules/
+dist/
+.cache/
+
+# material interno de trabalho (nunca sobe)
+*.md
+!README.md
+*.pdf
+*.bak
+*.bak_*
+*_revisada.html
+index_v2.html
+preview-*.html
+styles.css
+Documento/
+Editadas/
+LP/
+REF/
+
+# fotos brutas e originais nao usados pela pagina
+assets/*.jpg
+assets/*.jpeg
+assets/gerenciador/*.png
