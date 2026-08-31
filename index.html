@@ -2035,23 +2035,24 @@ var PLATAFORMAS = [
       el.textContent = cru ? String(n) : fmt.format(n);
     }
     if(reduce){ escrever(alvo); return; }
+    if(el.getAttribute('data-contado') === '1'){ escrever(alvo); return; }
+    el.setAttribute('data-contado', '1');
 
-    /* limiar proporcional: assim o ano de quatro dígitos assenta
-       no mesmo tempo que o 80, em vez de arrastar por seis segundos */
-    var parada = Math.max(.5, Math.abs(alvo) * .0015);
-    var x = 0, v = 0, rigidez = 140, amortec = 62, tAnt = null;
+    /* Baseado em tempo real, com fim garantido: termina em DUR ms
+       mesmo se o requestAnimationFrame for estrangulado (iframe, celular,
+       aba em segundo plano). Antes era uma mola por frame, que nunca
+       "chegava" quando os frames rareavam. */
+    var DUR = 1600, t0 = null;
+    function easeOutExpo(k){ return k >= 1 ? 1 : 1 - Math.pow(2, -10 * k); }
     function quadro(ts){
-      if(tAnt === null) tAnt = ts;
-      var dt = Math.min(.032, (ts - tAnt) / 1000);
-      tAnt = ts;
-      var a = -rigidez * (x - alvo) - amortec * v;
-      v += a * dt;
-      x += v * dt;
-      if(Math.abs(alvo - x) < parada && Math.abs(v) < parada * 2){ escrever(alvo); return; }
-      escrever(x);
-      window.requestAnimationFrame(quadro);
+      if(t0 === null) t0 = ts;
+      var k = Math.min(1, (ts - t0) / DUR);
+      escrever(alvo * easeOutExpo(k));
+      if(k < 1) window.requestAnimationFrame(quadro); else escrever(alvo);
     }
     window.requestAnimationFrame(quadro);
+    /* rede de seguranca: se o rAF parar de vez, o valor final entra mesmo assim */
+    setTimeout(function(){ escrever(alvo); }, DUR + 400);
   }
 
   var contadores = document.querySelectorAll('[data-count]');
