@@ -41,7 +41,7 @@
 }
 
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:hidden;overflow-x:clip}
 body{
   margin:0;
   background:var(--void);
@@ -65,8 +65,8 @@ h1,h2,h3,h4{font-family:var(--display);color:var(--white);margin:0;font-weight:6
 /* No celular a frase completa nao cabe em 2 linhas legiveis:
    fica so a frase-sintese, grande. A versao completa e so desktop. */
 @media(max-width:999px){
-  .hd-desk{display:none}
-  .h-display{font-size:clamp(1.5rem,6.6vw,2.4rem);line-height:1.14}
+  /* texto completo tambem no celular; uma frase por linha, fonte menor */
+  .h-display{font-size:clamp(1.15rem,5.2vw,1.6rem);line-height:1.24}
 }
 .h-sec{font-weight:600;font-size:clamp(1.85rem,3.7vw,3.05rem);line-height:1.1;letter-spacing:-.03em;text-wrap:balance}
 .h-sub{font-family:var(--display);color:var(--white);font-weight:600;font-size:clamp(1.15rem,1.8vw,1.4rem);letter-spacing:-.02em;line-height:1.3}
@@ -591,7 +591,8 @@ h1,h2,h3,h4{font-family:var(--display);color:var(--white);margin:0;font-weight:6
 @media(max-width:700px){
   .ciclo{width:100%;height:auto;display:flex;flex-direction:column;align-items:center;padding-block:.4rem}
   .ciclo svg{display:none}
-  .ciclo__n{position:relative;transform:none;max-width:min(320px,86vw)}
+  /* left/top inline sao do circulo do desktop: anulados aqui */
+  .ciclo__n{position:relative;left:auto!important;top:auto!important;transform:none;max-width:min(320px,86vw)}
   .ciclo__n:hover{transform:none}
   .ciclo__n + .ciclo__n{margin-top:2.6rem}
   .ciclo__n + .ciclo__n::before{
@@ -2020,12 +2021,19 @@ var PLATAFORMAS = [
        mesmo se o requestAnimationFrame for estrangulado (iframe, celular,
        aba em segundo plano). Antes era uma mola por frame, que nunca
        "chegava" quando os frames rareavam. */
+    /* Relogio proprio (performance.now) em vez do timestamp do rAF: no Safari
+       do iPhone ele pode chegar atras do primeiro frame, e k negativo explode
+       a curva. k sempre preso em [0,1] e valor sempre entre 0 e o alvo. */
     var DUR = 1600, t0 = null;
     function easeOutExpo(k){ return k >= 1 ? 1 : 1 - Math.pow(2, -10 * k); }
-    function quadro(ts){
-      if(t0 === null) t0 = ts;
-      var k = Math.min(1, (ts - t0) / DUR);
-      escrever(alvo * easeOutExpo(k));
+    function agora(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+    function quadro(){
+      var t = agora();
+      if(t0 === null || t < t0) t0 = t;
+      var k = Math.max(0, Math.min(1, (t - t0) / DUR));
+      var v = alvo * easeOutExpo(k);
+      if(!isFinite(v)) v = alvo;
+      escrever(Math.max(0, Math.min(alvo, v)));
       if(k < 1) window.requestAnimationFrame(quadro); else escrever(alvo);
     }
     window.requestAnimationFrame(quadro);
@@ -2761,6 +2769,23 @@ window.muralCarrossel = (function(){
   if(!reduz) setInterval(function(){ if(!sobre) irPara(ativo + 1); }, 4000);
   window.addEventListener('resize', pintar);
   pintar();
+})();
+
+/* ---------- mapa: no celular a caixa rola; abre centrada nos pinos ----------
+   Os 5 paises ficam entre 17% e 62% da largura do SVG (centro ~39%).
+   Centrando ai, Paraguai e Espanha cabem na tela sem cortar. */
+(function(){
+  'use strict';
+  var box = document.querySelector('.mapa__box');
+  if(!box) return;
+  function centrar(){
+    if(box.scrollWidth > box.clientWidth + 4){
+      box.scrollLeft = Math.max(0, box.scrollWidth * .393 - box.clientWidth / 2);
+    }
+  }
+  centrar();
+  window.addEventListener('load', centrar);
+  window.addEventListener('resize', centrar);
 })();
 
 /* ---------- botoes 4D: o brilho acompanha o ponteiro ---------- */
